@@ -137,16 +137,17 @@ function fillPresenters(){
     : dataNames.sort();
   const sel=document.getElementById('presenterSel');
   const cur=sel.value;
-  sel.innerHTML='<option value="__all">All presenters</option>'+names.map(n=>`<option>${esc(n)}</option>`).join('');
-  if([...sel.options].some(o=>o.value===cur||o.text===cur)) sel.value=cur;
+  sel.innerHTML='<option value="" selected>Select a presenter…</option>'+names.map(n=>`<option>${esc(n)}</option>`).join('');
+  if(cur && [...sel.options].some(o=>o.text===cur)) sel.value=cur;
 }
 
 function render(){
   const board=document.getElementById('board');
   if(!ROWS.length){ board.innerHTML='<div class="empty">No responses yet.</div>'; return; }
   const sel=document.getElementById('presenterSel').value;
-  const subset = sel==='__all' ? ROWS : ROWS.filter(r=>(r[pIdx]||'').trim()===sel);
-  const who = sel==='__all' ? 'All presenters' : sel;
+  if(!sel){ board.innerHTML='<div class="empty">Select a presenter above to view their feedback.</div>'; return; }
+  const subset = ROWS.filter(r=>(r[pIdx]||'').trim()===sel);
+  const who = sel;
   let html=`<div class="who">${esc(who)}</div><div class="count">${subset.length} response${subset.length!==1?'s':''}</div>`;
   textCols.forEach(i=>{
     const answers=subset.map(r=>(r[i]||'').trim()).filter(Boolean);
