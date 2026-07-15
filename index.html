@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Global Policy Talk — Live Feedback Board</title>
+<style>
+:root{
+  --bg:#f7f5f0; --panel:#ffffff; --line:#e7e2d6; --line2:#efeade;
+  --text:#26303f; --muted:#6b7688; --accent:#3a5ba0; --heading:#b06a2c;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:"Iowan Old Style",Palatino,"Palatino Linotype",Georgia,"Times New Roman",serif;
+  background:var(--bg);color:var(--text);line-height:1.6;-webkit-font-smoothing:antialiased}
+.bar{position:sticky;top:0;z-index:10;display:flex;gap:12px;align-items:center;flex-wrap:wrap;
+  padding:12px 24px;background:rgba(247,245,240,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+.bar h1{font-size:16px;margin:0;margin-right:auto;font-weight:700;letter-spacing:.01em;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+select,button,input{font:inherit;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+select{padding:8px 12px;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--text);font-weight:600;font-size:14px}
+button{padding:8px 14px;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--text);cursor:pointer;font-weight:600;font-size:14px}
+button:hover{background:#f0ece1}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.primary:hover{background:#31508f}
+.status{font-size:12px;color:var(--muted)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#3aa564;margin-right:5px;vertical-align:middle}
+.dot.off{background:#c9a13b}
+
+.wrap{max-width:860px;margin:0 auto;padding:34px 26px 90px}
+.who{font-size:36px;font-weight:700;margin:4px 0 2px;letter-spacing:-.01em}
+.count{color:var(--muted);font-size:15px;margin-bottom:34px;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+.qsec{margin:0 0 40px}
+.qsec h2{font-size:14px;text-transform:uppercase;letter-spacing:.09em;color:var(--heading);font-weight:700;
+  margin:0 0 16px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+.cmt{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--line2);
+  border-radius:10px;padding:16px 20px;font-size:20px;line-height:1.55;margin:0 0 12px;
+  box-shadow:0 1px 2px rgba(40,50,70,.04)}
+.qsec:nth-child(3n+1) .cmt{border-left-color:#cdb7d8}
+.qsec:nth-child(3n+2) .cmt{border-left-color:#b7cdd8}
+.qsec:nth-child(3n) .cmt{border-left-color:#d8cdb7}
+.empty{color:var(--muted);font-style:italic;font-size:16px}
+
+.setup{max-width:860px;margin:0 auto;padding:0 26px;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+.setup .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin-top:22px}
+.setup label{display:block;font-size:12px;color:var(--muted);font-weight:700;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em}
+.setup input{width:100%;padding:11px 13px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--text)}
+.setup ol{color:var(--muted);font-size:14px;line-height:1.75;margin:14px 0 0;padding-left:20px}
+.setup a{color:var(--accent)}
+.err{color:#c0392b;font-size:14px;margin-top:10px}
+@media(max-width:640px){ .who{font-size:28px} .cmt{font-size:18px} .wrap{padding:24px 18px 70px} }
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <h1>Global Policy Talk — Live Feedback</h1>
+  <label style="font-size:12px;color:var(--muted)">Presenter&nbsp;</label>
+  <select id="presenterSel" onchange="render()"></select>
+  <span class="status" id="status"><span class="dot off"></span>not connected</span>
+  <button onclick="refresh()">Refresh</button>
+  <button onclick="toggleAuto()" id="autoBtn">Auto: on</button>
+  <button onclick="goFull()">Full screen</button>
+  <button onclick="toggleSetup()" id="setupBtn">Setup</button>
+</div>
+
+<div class="setup" id="setupPane" style="display:none">
+  <div class="card">
+    <label for="csvUrl">Published Google Sheet CSV link</label>
+    <input id="csvUrl" placeholder="https://docs.google.com/spreadsheets/d/e/…/pub?output=csv">
+    <label for="presetNames" style="margin-top:16px">Presenter names (optional — one per line, in the order you want them)</label>
+    <textarea id="presetNames" rows="5" placeholder="Presenter 1 — Topic&#10;Presenter 2 — Topic&#10;Presenter 3 — Topic" style="width:100%;padding:11px 13px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--text);font-family:inherit;resize:vertical"></textarea>
+    <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
+      <button class="primary" onclick="saveSettings()">Save &amp; connect</button>
+      <button onclick="loadSample()">Load sample data</button>
+    </div>
+    <div class="err" id="setupErr"></div>
+    <p style="font-size:13px;color:var(--muted);margin:10px 0 0">The names here should match the presenter options in your Google Form. Listed presenters always appear in the dropdown, even before any feedback arrives.</p>
+    <ol>
+      <li>In your responses Google Sheet: <b>File → Share → Publish to web</b>.</li>
+      <li>Choose the responses sheet and format <b>Comma-separated values (.csv)</b>, then click <b>Publish</b>.</li>
+      <li>Copy the link and paste it above. The board refreshes automatically as students submit.</li>
+      <li>Note: publishing makes the (anonymous) responses readable by anyone with the link.</li>
+    </ol>
+  </div>
+</div>
+
+<div class="wrap" id="board">
+  <div class="empty">Open <b>Setup</b> to paste your published Sheet link, or click <b>Load sample data</b> to preview.</div>
+</div>
+
+<script>
+let ROWS=[], HEADER=[], pIdx=-1, textCols=[], autoOn=true, timer=null, presetNames=[];
+const LS='gpt_board_url';
+const LSN='gpt_board_presenters';
+
+function toggleSetup(){ const p=document.getElementById('setupPane'); p.style.display = p.style.display==='none'?'':'none'; }
+function toggleAuto(){ autoOn=!autoOn; document.getElementById('autoBtn').textContent='Auto: '+(autoOn?'on':'off'); schedule(); }
+function goFull(){ if(!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); }
+function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function parseCSV(text){
+  const rows=[];let f='',row=[],q=false;
+  for(let i=0;i<text.length;i++){const c=text[i];
+    if(q){ if(c=='"'){ if(text[i+1]=='"'){f+='"';i++;} else q=false; } else f+=c; }
+    else { if(c=='"')q=true; else if(c==','){row.push(f);f='';} else if(c=='\n'){row.push(f);rows.push(row);row=[];f='';} else if(c=='\r'){} else f+=c; }
+  }
+  if(f.length||row.length){row.push(f);rows.push(row);}
+  return rows.filter(r=>r.some(x=>x&&x.trim()));
+}
+
+// keep only free-text comment columns; drop presenter, timestamp, and numeric-rating columns
+function classify(){
+  pIdx = HEADER.findIndex(h=>/presenter/i.test(h));
+  if(pIdx<0) pIdx=1;
+  textCols=[];
+  HEADER.forEach((h,i)=>{
+    if(i===pIdx) return;
+    if(/timestamp|^time$|^date$/i.test(h)) return;
+    if(/submitter|e-?mail|^\s*name\s*$|your name/i.test(h)) return; // hide identity columns
+    const vals=ROWS.map(r=>(r[i]||'').trim()).filter(Boolean);
+    if(!vals.length) return;
+    const nums=vals.filter(v=>/^[1-5]$/.test(v));
+    if(nums.length >= vals.length*0.7) return; // numeric rating -> skip
+    textCols.push(i);
+  });
+}
+
+function fillPresenters(){
+  const dataNames=[...new Set(ROWS.map(r=>(r[pIdx]||'').trim()).filter(Boolean))];
+  // designated names first (in given order), then any extra names found in the data
+  let names = presetNames.length
+    ? [...presetNames, ...dataNames.filter(n=>!presetNames.includes(n))]
+    : dataNames.sort();
+  const sel=document.getElementById('presenterSel');
+  const cur=sel.value;
+  sel.innerHTML='<option value="__all">All presenters</option>'+names.map(n=>`<option>${esc(n)}</option>`).join('');
+  if([...sel.options].some(o=>o.value===cur||o.text===cur)) sel.value=cur;
+}
+
+function render(){
+  const board=document.getElementById('board');
+  if(!ROWS.length){ board.innerHTML='<div class="empty">No responses yet.</div>'; return; }
+  const sel=document.getElementById('presenterSel').value;
+  const subset = sel==='__all' ? ROWS : ROWS.filter(r=>(r[pIdx]||'').trim()===sel);
+  const who = sel==='__all' ? 'All presenters' : sel;
+  let html=`<div class="who">${esc(who)}</div><div class="count">${subset.length} response${subset.length!==1?'s':''}</div>`;
+  textCols.forEach(i=>{
+    const answers=subset.map(r=>(r[i]||'').trim()).filter(Boolean);
+    html+=`<div class="qsec"><h2>${esc(HEADER[i])}</h2>`;
+    html+= answers.length ? answers.map(a=>`<div class="cmt">${esc(a)}</div>`).join('')
+                          : '<div class="empty">No comments yet.</div>';
+    html+='</div>';
+  });
+  board.innerHTML=html;
+}
+
+function setStatus(ok,msg){ document.getElementById('status').innerHTML=`<span class="dot ${ok?'':'off'}"></span>${esc(msg)}`; }
+
+async function refresh(){
+  const url=localStorage.getItem(LS);
+  if(!url){ setStatus(false,'no link set'); return; }
+  try{
+    const res=await fetch(url+(url.includes('?')?'&':'?')+'_t='+Date.now());
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const text=await res.text();
+    const rows=parseCSV(text);
+    if(rows.length<1) throw new Error('empty sheet');
+    HEADER=rows[0].map(h=>h.trim()); ROWS=rows.slice(1);
+    classify(); fillPresenters(); render();
+    setStatus(true,'updated '+new Date().toLocaleTimeString());
+  }catch(e){ setStatus(false,'error: '+(e.message||e)); }
+}
+
+function schedule(){ if(timer) clearInterval(timer); if(autoOn) timer=setInterval(refresh,20000); }
+
+function saveSettings(){
+  const err=document.getElementById('setupErr');
+  // presenter names (optional)
+  presetNames=document.getElementById('presetNames').value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+  localStorage.setItem(LSN, JSON.stringify(presetNames));
+  // csv link (optional — you can set names in sample mode without a link)
+  const u=document.getElementById('csvUrl').value.trim();
+  if(u){
+    if(!/^https?:\/\//.test(u)){ err.textContent='Please paste a valid https link (or leave it blank).'; return; }
+    localStorage.setItem(LS,u);
+    document.getElementById('setupPane').style.display='none';
+    refresh(); schedule(); return;
+  }
+  err.textContent='';
+  document.getElementById('setupPane').style.display='none';
+  fillPresenters(); render(); // reflect new names against whatever data is loaded
+}
+
+const SAMPLE=`Timestamp,Presenter Name,Submitter Name,What was the strongest part of this policy talk?,"One suggestion to strengthen the argument, evidence, or delivery?",One insight or question this talk raised for you?
+7/15 10:02,Priya Nair,Alex Chen,Confident command of the 2024 UNHCR data; the framing was very clear and easy to follow.,The middle section had too many statistics at once — slowing down there would help.,How is the funding mechanism actually paid for?
+7/15 10:03,Priya Nair,Jordan Blake,Handled the tough questions at the end really thoughtfully.,The slides were text-heavy; fewer words would keep us on your voice.,What about political feasibility in the Global South?
+7/15 10:04,Priya Nair,Sam Ortiz,A persuasive case for treating climate migration as a security issue.,I would have loved one concrete case study to ground the argument.,
+7/15 10:06,Marcus Webb,Alex Chen,"Great storytelling and a clear, logical structure throughout.",The central claim needed a bit more data behind it.,Could this approach scale beyond a pilot program?
+7/15 10:07,Marcus Webb,Riley Kim,Confident delivery and a genuinely strong closing.,A few technical terms went undefined for a general audience.,`;
+
+function loadSample(){
+  const rows=parseCSV(SAMPLE);
+  HEADER=rows[0].map(h=>h.trim()); ROWS=rows.slice(1);
+  classify(); fillPresenters(); render();
+  document.getElementById('setupPane').style.display='none';
+  setStatus(true,'sample data (not live)');
+}
+
+(function(){
+  try{ presetNames=JSON.parse(localStorage.getItem(LSN)||'[]'); }catch(e){ presetNames=[]; }
+  if(presetNames.length){ document.getElementById('presetNames').value=presetNames.join('\n'); fillPresenters(); }
+  const saved=localStorage.getItem(LS);
+  if(saved){ document.getElementById('csvUrl').value=saved; refresh(); schedule(); }
+})();
+</script>
+</body>
+</html>
