@@ -62,6 +62,7 @@ button.primary:hover{background:#31508f}
   <select id="presenterSel" onchange="render()"></select>
   <span class="status" id="status"><span class="dot off"></span>not connected</span>
   <button onclick="refresh()">Refresh</button>
+  <button onclick="copyForChat()" id="copyBtn">Copy comments</button>
   <button onclick="toggleAuto()" id="autoBtn">Auto: on</button>
   <button onclick="goFull()">Full screen</button>
   <button onclick="toggleSetup()" id="setupBtn">Setup</button>
@@ -160,6 +161,25 @@ function render(){
 }
 
 function setStatus(ok,msg){ document.getElementById('status').innerHTML=`<span class="dot ${ok?'':'off'}"></span>${esc(msg)}`; }
+
+function copyForChat(){
+  const btn=document.getElementById('copyBtn');
+  const sel=document.getElementById('presenterSel').value;
+  if(!sel){ btn.textContent='Pick a presenter first'; setTimeout(()=>btn.textContent='Copy comments',1600); return; }
+  const subset=ROWS.filter(r=>(r[pIdx]||'').trim()===sel);
+  const lines=['Feedback for '+sel,''];
+  textCols.forEach(i=>{
+    const answers=subset.map(r=>(r[i]||'').trim()).filter(Boolean);
+    if(!answers.length) return;
+    lines.push(HEADER[i]);
+    answers.forEach(a=>lines.push('• '+a));
+    lines.push('');
+  });
+  const text=lines.join('\n').trim();
+  navigator.clipboard.writeText(text).then(()=>{
+    btn.textContent='Copied ✓'; setTimeout(()=>btn.textContent='Copy comments',1600);
+  }).catch(()=>{ btn.textContent='Copy failed'; setTimeout(()=>btn.textContent='Copy comments',1600); });
+}
 
 async function refresh(){
   const url=localStorage.getItem(LS);
